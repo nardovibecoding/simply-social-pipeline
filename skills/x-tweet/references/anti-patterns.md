@@ -39,10 +39,10 @@ Before attaching any image, scan for:
 - [ ] Repo names that aren't public
 - [ ] .env file contents
 - [ ] Error messages with stack traces
-- [ ] CLAUDE.md rules (reveals system architecture)
+- [ ] private assistant rules or prompts
 - [ ] MCP server configs, ports
 - [ ] Git remote URLs for private repos
-- [ ] Telegram usernames, group names
+- [ ] private chat usernames or group names
 - [ ] Email addresses
 
 **Rule**: If in doubt, don't include the screenshot. Use a demo project or crop to output only.

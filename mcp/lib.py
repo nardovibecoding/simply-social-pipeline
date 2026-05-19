@@ -1,20 +1,22 @@
-"""Content pipeline library — pure Python, no MCP dependency.
+"""Content pipeline library - pure Python, no MCP dependency.
 
 Functions used by both the MCP server and optionally by bots/scripts:
     from lib import content_capture, content_queue, session_checkpoint, session_log
 """
 
+import os
 import time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
 
 # --- Paths ---
-CONTENT_DRAFTS = Path.home() / ".claude" / "content_drafts"
+CONTENT_HOME = Path(os.environ.get("CONTENT_PIPELINE_HOME", str(Path.home() / "content-pipeline"))).expanduser()
+CONTENT_DRAFTS = CONTENT_HOME / "drafts"
 CONTENT_LOG = CONTENT_DRAFTS / "running_log.md"
 QUEUE_FILE = CONTENT_DRAFTS / "queue.md"
-CHECKPOINT_DIR = CONTENT_DRAFTS
-TWEETS_LOG = CONTENT_DRAFTS / "tweets.jsonl"
+CHECKPOINT_DIR = CONTENT_HOME / "checkpoints"
+TWEETS_LOG = CONTENT_HOME / "metrics" / "posts.jsonl"
 
 # --- Session state (in-memory, resets on process restart) ---
 session_actions: deque = deque(maxlen=100)
@@ -36,7 +38,7 @@ def content_capture(moment: str, category: str = "insight") -> dict:
 
 
 def content_queue(action: str = "list", tweet: str = "", priority: str = "normal") -> dict:
-    """Manage tweet draft queue.
+    """Manage social draft queue.
 
     Args:
         action: "add", "list", "next", or "posted"
@@ -97,7 +99,7 @@ def content_queue(action: str = "list", tweet: str = "", priority: str = "normal
 
 
 def tweet_log(tweet_id: str, text: str, url: str = "") -> dict:
-    """Log a posted tweet for later performance tracking."""
+    """Log a posted social item for later performance tracking."""
     import json as _json
     TWEETS_LOG.parent.mkdir(parents=True, exist_ok=True)
     entry = {
@@ -112,7 +114,7 @@ def tweet_log(tweet_id: str, text: str, url: str = "") -> dict:
 
 
 def session_checkpoint(summary: str, key_decisions: list = None, files_changed: list = None) -> dict:
-    """Save session state to checkpoint file.
+    """Save local work state to checkpoint file.
 
     Args:
         summary: what was accomplished (2-3 sentences)
@@ -141,7 +143,7 @@ def session_checkpoint(summary: str, key_decisions: list = None, files_changed: 
     checkpoint_path.write_text(file_content)
 
     if len(actions) > 10:
-        content_capture(moment=f"Productive session: {summary}", category="journey")
+        content_capture(moment=f"Productive work block: {summary}", category="journey")
 
     return {"saved": str(checkpoint_path), "actions_logged": len(actions)}
 

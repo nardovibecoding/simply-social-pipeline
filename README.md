@@ -1,246 +1,115 @@
-<div align="center">
-  <h1>claude-social-pipeline</h1>
+# simply-social-pipeline
 
-  <p><strong>Capture insights while coding. Draft tweets without leaving the terminal.</strong></p>
+A local content-capture and draft pipeline for developer storytelling.
 
-  [![MCP Tools](https://img.shields.io/badge/MCP%20TOOLS-6-0057FF?style=for-the-badge)](https://github.com/nardovibecoding/claude-social-pipeline)
-  [![Skills](https://img.shields.io/badge/SKILLS-2-FF6B00?style=for-the-badge)](https://github.com/nardovibecoding/claude-social-pipeline)
-  [![Platform](https://img.shields.io/badge/PLATFORM-macOS%20%7C%20Linux-lightgrey?style=for-the-badge)](https://github.com/nardovibecoding/claude-social-pipeline)
-  [![License](https://img.shields.io/badge/LICENSE-AGPL--3.0-red?style=for-the-badge)](LICENSE)
+This repo gives you a small MCP-compatible content server, a draft queue, a text
+humanizer, and optional social posting adapters. It is a public template, not a
+mirror of any private content workflow.
 
-  <img src="demo.gif" alt="Git log to tweet draft with voice check and humanizer" width="700">
-</div>
-
-Genuine insights happen while you're deep in code. By the time you open Twitter, the moment's gone and you're staring at a blank box. This captures them in-context and drafts content without breaking flow.
-
----
+## Quickstart
 
 ```bash
-claude plugins install nardovibecoding/claude-social-pipeline
+gh repo clone nardovibecoding/simply-social-pipeline
+cd simply-social-pipeline
+bash install.sh
 ```
 
----
+Requirements:
 
-## What It Does
+- Python 3.10+
+- `pip`
+- macOS or Linux
 
-The best content comes from real work. This plugin makes it frictionless to capture insights as they happen, humanize drafts before publishing, and post from the terminal — without breaking flow.
-
-**The pipeline:**
-
-```
-coding session
-     │
-     ├── interesting thing happens
-     │       └── content_capture("discovered X")
-     │                   └── ~/.claude/content_drafts/running_log.md
-     │
-     ├── session getting long
-     │       └── session_checkpoint("built Y")
-     │                   └── ~/.claude/content_drafts/checkpoint_ts.md
-     │
-     ├── task complete
-     │       └── post_task_check()
-     │                   └── "content-worthy: use content_capture"
-     │
-     └── ready to post
-             └── /tweet suggest
-                         └── git log → privacy filter → draft
-                                     └── humanizer → approve → X API
-```
-
----
-
-## MCP Tools
-
-Six tools Claude calls automatically during your session — no slash commands needed.
-
-| Tool | What it does |
-|------|-------------|
-| `content_capture` | Save a tweet-worthy moment mid-session. Appends to `running_log.md` with timestamp and context. |
-| `content_queue` | Manage tweet drafts — add, list, get next, mark posted. Priority-sorted queue. |
-| `session_checkpoint` | Snapshot session state (summary, decisions, files changed) before `/clear` or context limit. |
-| `post_task_check` | After finishing a task — scan session for content-worthy material and improvement patterns. |
-| `set_reminder` | Terminal alert with no background service: `"30m"`, `"2h"`, or `"16:55"` (HKT). |
-| `tweet_performance` | Pull engagement stats for recent tweets — likes, retweets, replies, views, engagement score. Auto-captures best performer to content log. |
-
----
-
-## Skills
-
-### `/tweet` — x-tweet
-
-Draft, humanize, and post tweets. Runs every post through a multi-step pipeline before anything reaches the API.
-
-**Pipeline:** git log → privacy filter → voice rules → content-humanizer → anti-pattern scan → manual approval → X API v2
-
-**Modes:**
-
-| Command | What it does |
-|---------|-------------|
-| `/tweet [topic]` | Draft from a topic, approve, post |
-| `/tweet suggest` | Read git log, surface privacy-safe angles |
-| `/tweet hot` | Search X for trending topics in your space |
-| `/tweet draft` | Save to queue without posting |
-| `/tweet queue` | View and pick from saved drafts |
-| `/tweet thread` | Generate a 3–5 tweet thread |
-
-**Never auto-posts.** Every tweet requires explicit approval before the X API is called.
-
-**Env vars required:**
-```env
-X_API_KEY=your_key
-X_API_SECRET=your_secret
-X_ACCESS_TOKEN=your_token
-X_ACCESS_TOKEN_SECRET=your_token_secret
-```
-
----
-
-### `content-humanizer`
-
-Detects and removes AI writing patterns. Not a word-swap tool — it rebuilds voice from the ground up using a two-pass approach.
-
-**Triggers:** `"sounds like AI"`, `"make it human"`, `"add personality"`, `"too generic"`, `"fix AI writing"`
-
-**How it works:**
-
-1. `humanizer_scorer.py` runs a 12-point checklist: filler words, hedge phrases, em-dash overuse, passive constructions, hollow intensifiers, and more
-2. Produces a score (0–100) and a list of specific tells
-3. Rewriter addresses each tell with concrete changes — not paraphrasing
-
-**Before / After:**
-
-```
-BEFORE (AI score: 31/100)
-"It's worth noting that this approach leverages cutting-edge techniques
-to significantly enhance performance. The implementation showcases a
-robust solution that addresses the core challenges effectively."
-
-AFTER (AI score: 89/100)
-"This drops response time by 40%. The trick: cache the embedding lookup
-instead of recomputing on every request. Obvious in hindsight."
-```
-
-**Attribution:** Content humanizer skill originally by [Alireza Rezvani](https://github.com/AliiRezaa) — MIT licensed. Scorer script and voice techniques added for this distribution.
-
----
-
-## Install
-
-One command. Takes 30 seconds.
+The installer uses `~/simply-social-pipeline` and stores drafts under
+`~/content-pipeline` by default. Override them with:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nardovibecoding/claude-social-pipeline/main/install.sh | bash
+INSTALL_DIR="$HOME/tools/simply-social-pipeline" \
+CONTENT_PIPELINE_HOME="$HOME/content-pipeline" \
+bash install.sh
 ```
 
-Clones the repo, installs `mcp` package, registers MCP server in `~/.claude/settings.json`. Restart Claude Code.
+## What You Get
 
-<details>
-<summary>Manual install</summary>
+| Component | Purpose |
+|---|---|
+| `mcp/` | local content capture, queue, checkpoint, reminder, and review tools |
+| `skills/content-humanizer/` | local text review and rewrite prompts |
+| `skills/x-tweet/` | optional social draft workflow with manual posting gate |
+| `install.sh` | local installer with configurable paths |
+
+## Safe Defaults
+
+- Drafts are written to `CONTENT_PIPELINE_HOME`, defaulting to
+  `~/content-pipeline`.
+- Posting scripts do not post unless you pass an explicit confirmation flag.
+- Notification hooks are optional and use fake `.env.example` values.
+- Real drafts, logs, cookies, OAuth files, metrics, and API keys stay out of
+  git.
+
+## Common Commands
 
 ```bash
-git clone https://github.com/nardovibecoding/claude-social-pipeline.git
-pip install mcp
+# install locally
+bash install.sh
+
+# run content functions directly
+python3 - <<'PY'
+from mcp.lib import content_capture, content_queue
+print(content_capture("Found a simpler API boundary", "insight"))
+print(content_queue("add", "Tiny draft goes here", "normal"))
+PY
+
+# score a draft for common AI-writing tells
+printf "This is a direct draft with concrete detail.\n" > /tmp/draft.txt
+python3 skills/content-humanizer/scripts/humanizer_scorer.py /tmp/draft.txt
+
+# prepare a social post without publishing
+python3 skills/x-tweet/scripts/post_tweet.py "Draft text" --dry-run
 ```
-
-Add to `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "content-pipeline": {
-      "command": "python3",
-      "args": ["/path/to/claude-social-pipeline/mcp/server.py"]
-    }
-  }
-}
-```
-
-</details>
-
-Copy skills:
-
-```bash
-cp -r claude-social-pipeline/skills/x-tweet ~/.claude/skills/
-cp -r claude-social-pipeline/skills/content-humanizer ~/.claude/skills/
-```
-
----
 
 ## Configuration
 
-No config required for basic usage (content capture, checkpoints, humanizer).
-
-For `x-tweet` posting, set in `.env`:
+Copy `.env.example` and edit locally. Keep real values out of git.
 
 ```env
-X_API_KEY=your_key
-X_API_SECRET=your_secret
-X_ACCESS_TOKEN=your_token
-X_ACCESS_TOKEN_SECRET=your_token_secret
+CONTENT_PIPELINE_HOME=~/content-pipeline
+SOCIAL_USERNAME=example_user
+X_API_KEY=replace_me
+X_API_SECRET=replace_me
+X_ACCESS_TOKEN=replace_me
+X_ACCESS_TOKEN_SECRET=replace_me
+CONTENT_NOTIFY_WEBHOOK_URL=
 ```
 
-For Telegram post alerts (optional):
+## Optional Posting Adapter
 
-```env
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
+`skills/x-tweet/scripts/post_tweet.py` can publish through X API v2 only after
+you provide credentials and pass `--confirm-post`.
+
+```bash
+python3 skills/x-tweet/scripts/post_tweet.py "hello from the draft queue" --dry-run
+python3 skills/x-tweet/scripts/post_tweet.py "approved post text" --confirm-post
 ```
 
----
+Use `--no-alert` to skip the optional notification webhook.
 
-## Project Structure
+## Public Template Boundary
 
-```
-claude-social-pipeline/
-├── mcp/
-│   ├── server.py              # MCP server — 6 content tools
-│   ├── lib.py                 # Pure Python content functions
-│   ├── patterns.py            # post_task_check patterns
-│   └── pyproject.toml
-├── skills/
-│   ├── x-tweet/
-│   │   ├── SKILL.md
-│   │   ├── scripts/
-│   │   │   ├── post_tweet.py          # X API v2 posting
-│   │   │   └── tweet_stats.py         # Performance metrics
-│   │   └── references/
-│   │       ├── voice-rules.md
-│   │       ├── templates.md
-│   │       ├── anti-patterns.md
-│   │       ├── hashtag-strategy.md
-│   │       ├── content-calendar.md
-│   │       └── engagement-data.md
-│   └── content-humanizer/
-│       ├── SKILL.md
-│       ├── scripts/
-│       │   └── humanizer_scorer.py
-│       └── references/
-│           ├── ai-tells-checklist.md
-│           └── voice-techniques.md
-├── README.md
-└── LICENSE
-```
+This public template intentionally omits:
 
-Content drafts are written to `~/.claude/content_drafts/`:
+- private assistant transcript paths
+- private content drafts and queues
+- real account analytics history
+- cookies, OAuth files, and session state
+- live Telegram bot or chat identifiers
+- unattended social posting
 
-```
-~/.claude/content_drafts/
-├── running_log.md       # All content_capture() moments
-├── queue.md             # Tweet draft queue (priority-sorted)
-└── checkpoint_*.md      # Session checkpoints
-```
+## Review Policy
 
----
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=nardovibecoding/claude-social-pipeline&type=Date)](https://star-history.com/#nardovibecoding/claude-social-pipeline&Date)
-
----
+This is a solo-maintainer public template. Security-sensitive changes should be
+reviewed before release.
 
 ## License
 
-AGPL-3.0 — see [LICENSE](LICENSE).
-
-`content-humanizer` skill includes work originally by [Alireza Rezvani](https://github.com/AliiRezaa) (MIT). See `skills/content-humanizer/SKILL.md` for full attribution.
+AGPL-3.0-or-later

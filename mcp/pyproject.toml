@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "claude-content-pipeline"
+name = "simply-social-pipeline"
 version = "1.0.0"
-description = "MCP server for Claude Code content workflow — capture, queue, checkpoint"
+description = "MCP server for local content capture, draft queue, and checkpoints"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.0.0"]
 

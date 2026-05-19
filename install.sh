@@ -1,81 +1,62 @@
 #!/usr/bin/env bash
-# Claude Social Pipeline — one-liner installer
-# curl -fsSL https://raw.githubusercontent.com/nardovibecoding/claude-social-pipeline/main/install.sh | bash
+# simply-social-pipeline local installer.
 set -euo pipefail
 
-INSTALL_DIR="$HOME/claude-social-pipeline"
-SETTINGS="$HOME/.claude/settings.json"
+REPO_URL="${REPO_URL:-https://github.com/nardovibecoding/simply-social-pipeline.git}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/simply-social-pipeline}"
+CONTENT_PIPELINE_HOME="${CONTENT_PIPELINE_HOME:-$HOME/content-pipeline}"
+ASSISTANT_SETTINGS="${ASSISTANT_SETTINGS:-}"
 
-RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m' CYAN='\033[0;36m' BOLD='\033[1m' NC='\033[0m'
+echo "==> simply-social-pipeline install"
+echo "    install dir: $INSTALL_DIR"
+echo "    draft home:  $CONTENT_PIPELINE_HOME"
 
-echo ""
-echo -e "${CYAN}${BOLD}"
-echo "  ╔═════════════════════════════════════════╗"
-echo "  ║   Claude Social Pipeline Installer       ║"
-echo "  ║   6 MCP tools + 2 skills for X/content   ║"
-echo "  ╚═════════════════════════════════════════╝"
-echo -e "${NC}"
-
-# --- Check Python ---
-if ! command -v python3 &>/dev/null; then
-  echo -e "${RED}✗ Python 3 is required. Install it first.${NC}"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required" >&2
   exit 1
 fi
 
-# --- Clone or update ---
 if [ -d "$INSTALL_DIR/.git" ]; then
-  echo -e "${YELLOW}→ Updating existing install...${NC}"
-  git -C "$INSTALL_DIR" pull --ff-only 2>/dev/null || true
+  git -C "$INSTALL_DIR" pull --ff-only
+elif [ -d "$INSTALL_DIR" ]; then
+  echo "$INSTALL_DIR exists but is not a git repo. Set INSTALL_DIR or remove it." >&2
+  exit 1
 else
-  if [ -d "$INSTALL_DIR" ]; then
-    echo -e "${RED}✗ $INSTALL_DIR exists but is not a git repo. Remove it first.${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}→ Cloning repository...${NC}"
-  git clone https://github.com/nardovibecoding/claude-social-pipeline.git "$INSTALL_DIR"
+  git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
-# --- Install MCP dependencies ---
-echo -e "${GREEN}→ Installing MCP server dependencies...${NC}"
-pip3 install --quiet mcp 2>/dev/null || pip install --quiet mcp 2>/dev/null || echo -e "${YELLOW}  Warning: couldn't install mcp package. Install manually: pip install mcp${NC}"
+mkdir -p "$CONTENT_PIPELINE_HOME"/{drafts,logs,metrics}
 
-# --- Patch settings.json ---
-echo -e "${GREEN}→ Configuring MCP server...${NC}"
-mkdir -p "$HOME/.claude"
+python3 -m pip install --quiet --user mcp >/dev/null 2>&1 || {
+  echo "warning: could not install mcp automatically; run: python3 -m pip install --user mcp" >&2
+}
 
-python3 << 'PYEOF'
-import json, os
+if [ -n "$ASSISTANT_SETTINGS" ]; then
+  python3 - "$ASSISTANT_SETTINGS" "$INSTALL_DIR" <<'PY'
+import json
+import sys
+from pathlib import Path
 
-INSTALL_DIR = os.path.expanduser("~/claude-social-pipeline")
-SETTINGS = os.path.expanduser("~/.claude/settings.json")
+settings_path = Path(sys.argv[1]).expanduser()
+install_dir = Path(sys.argv[2]).expanduser()
+settings_path.parent.mkdir(parents=True, exist_ok=True)
 
-if os.path.exists(SETTINGS):
-    with open(SETTINGS) as f:
-        settings = json.load(f)
+if settings_path.exists():
+    settings = json.loads(settings_path.read_text())
 else:
     settings = {}
 
-# Add MCP server
 mcp = settings.setdefault("mcpServers", {})
 mcp["content-pipeline"] = {
     "command": "python3",
-    "args": [f"{INSTALL_DIR}/mcp/server.py"]
+    "args": [str(install_dir / "mcp" / "server.py")],
 }
+settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+print(f"configured MCP server in {settings_path}")
+PY
+else
+  echo "ASSISTANT_SETTINGS not set; skipped assistant config mutation."
+fi
 
-with open(SETTINGS, "w") as f:
-    json.dump(settings, f, indent=2)
-
-print("  MCP server configured in ~/.claude/settings.json")
-PYEOF
-
-# --- Done ---
-echo ""
-echo -e "${GREEN}${BOLD}✓ Claude Social Pipeline installed!${NC}"
-echo ""
-echo -e "  ${BOLD}6 MCP tools${NC} for content capture, queuing, checkpointing."
-echo -e "  ${BOLD}2 skills${NC} available in Claude Code:"
-echo -e "    ${CYAN}/x-tweet${NC}            — draft + post tweets"
-echo -e "    ${CYAN}/content-humanizer${NC}  — remove AI tone from text"
-echo ""
-echo -e "  ${YELLOW}Restart Claude Code if it's already running.${NC}"
-echo ""
+echo "==> install complete"
+echo "Run with: CONTENT_PIPELINE_HOME=\"$CONTENT_PIPELINE_HOME\" python3 \"$INSTALL_DIR/mcp/server.py\""
