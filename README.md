@@ -35,7 +35,7 @@ bash install.sh
 |---|---|
 | `mcp/` | local content capture, queue, checkpoint, reminder, and review tools |
 | `skills/content-humanizer/` | local text review and rewrite prompts |
-| `skills/x-tweet/` | optional social draft workflow with manual posting gate |
+| `skills/x-tweet/` | optional social draft workflow with source packets and a manual posting gate |
 | `install.sh` | local installer with configurable paths |
 
 ## Safe Defaults
@@ -86,6 +86,11 @@ CONTENT_NOTIFY_WEBHOOK_URL=
 
 `skills/x-tweet/scripts/post_tweet.py` can publish through X API v2 only after
 you provide credentials and pass `--confirm-post`.
+
+For source material, see
+[`skills/x-tweet/references/source-packets.md`](skills/x-tweet/references/source-packets.md)
+for a reviewed packet shape that can bring public X/Twitter context into the
+draft queue without changing the posting gate.
 
 ```bash
 python3 skills/x-tweet/scripts/post_tweet.py "hello from the draft queue" --dry-run
