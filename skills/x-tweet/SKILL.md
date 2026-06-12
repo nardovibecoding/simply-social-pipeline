@@ -29,11 +29,14 @@ and requires explicit approval plus the `--confirm-post` flag in
 | `/tweet draft [topic]` | Generate and save to queue without posting |
 | `/tweet queue` | View saved drafts |
 | `/tweet thread [topic]` | Generate a short thread draft |
+| `/tweet sources` | Review saved public source packets before drafting |
 | `/tweet stats` | Optional local metrics review |
 
 ## Flow
 
 1. Read only public-safe source material.
+   Use [source-packets.md](references/source-packets.md) when context comes
+   from X/Twitter, TweetClaw, monitors, or webhook summaries.
 2. Apply [voice-rules.md](references/voice-rules.md).
 3. Run the content-humanizer checklist.
 4. Check [anti-patterns.md](references/anti-patterns.md).
